@@ -5,127 +5,97 @@ import random
 class ElusiveDialog:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Important Message")
-        self.root.resizable(False, False)
-        
-        # Remove window decorations for a more authentic dialog look
         self.root.overrideredirect(True)
         
-        # Dialog dimensions
-        self.width = 300
-        self.height = 120
+        # Win98 Colors
+        self.W98_GREY = "#c0c0c0"
+        self.W98_BLUE = "#000080"
+        self.W98_WHITE = "#ffffff"
+        self.W98_DARK_GREY = "#808080"
         
-        # Get screen dimensions
-        self.screen_width = self.root.winfo_screenwidth()
-        self.screen_height = self.root.winfo_screenheight()
+        self.width = 320
+        self.height = 140
         
-        # Initial position (center of screen)
-        x = (self.screen_width - self.width) // 2
-        y = (self.screen_height - self.height) // 2
+        # Center Window
+        sw = self.root.winfo_screenwidth()
+        sh = self.root.winfo_screenheight()
+        x = (sw - self.width) // 2
+        y = (sh - self.height) // 2
         self.root.geometry(f"{self.width}x{self.height}+{x}+{y}")
-        
-        # Make window stay on top
         self.root.attributes('-topmost', True)
         
-        # Create dialog-like frame
-        main_frame = tk.Frame(self.root, bg='#f0f0f0', relief='raised', borderwidth=2)
-        main_frame.pack(fill='both', expand=True)
+        # Main Border (Classic 3D effect)
+        self.outer_frame = tk.Frame(self.root, bg=self.W98_GREY, highlightthickness=2, 
+                                   highlightbackground=self.W98_WHITE, 
+                                   highlightcolor=self.W98_DARK_GREY, relief='raised', bd=2)
+        self.outer_frame.pack(fill='both', expand=True)
         
-        # Title bar
-        title_frame = tk.Frame(main_frame, bg='#0078d7', height=30)
-        title_frame.pack(fill='x')
-        title_frame.pack_propagate(False)
+        # Title Bar
+        self.title_bar = tk.Frame(self.outer_frame, bg=self.W98_BLUE, height=22)
+        self.title_bar.pack(fill='x', padx=2, pady=2)
+        self.title_bar.pack_propagate(False)
         
-        title_label = tk.Label(title_frame, text="Important Message", 
-                              bg='#0078d7', fg='white', font=('Segoe UI', 9))
-        title_label.pack(side='left', padx=8, pady=5)
+        self.title_label = tk.Label(self.title_bar, text="System Error", 
+                                   bg=self.W98_BLUE, fg='white', 
+                                   font=('MS Sans Serif', 8, 'bold'))
+        self.title_label.pack(side='left', padx=5)
+
+        # Fake Close Button (Non-functional, for aesthetics)
+        self.close_btn = tk.Label(self.title_bar, text="×", bg=self.W98_GREY, fg='black',
+                                 font=('Arial', 10, 'bold'), width=2, relief='raised', bd=1)
+        self.close_btn.pack(side='right', padx=2, pady=2)
         
-        # Message area
-        message_frame = tk.Frame(main_frame, bg='white')
-        message_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        # Content Area
+        self.content = tk.Frame(self.outer_frame, bg=self.W98_GREY)
+        self.content.pack(fill='both', expand=True, padx=10, pady=10)
         
-        message = tk.Label(message_frame, text="Click OK to Close", 
-                          bg='white', font=('Segoe UI', 10))
-        message.pack(pady=15)
+        # Classic Icon Placeholder (A blue circle with a '?')
+        self.icon_lbl = tk.Label(self.content, text="?", font=('Times New Roman', 24, 'bold'),
+                                fg='white', bg='#0000ff', width=2, relief='sunken', bd=2)
+        self.icon_lbl.pack(side='left', padx=(5, 15))
         
-        # Button
-        self.ok_button = tk.Button(message_frame, text="OK", width=10, 
-                                   command=self.on_ok_click,
-                                   relief='raised', borderwidth=1)
-        self.ok_button.pack(pady=5)
+        self.message = tk.Label(self.content, text="An unknown error occurred.\nPress OK to ignore.", 
+                               bg=self.W98_GREY, font=('MS Sans Serif', 8), justify='left')
+        self.message.pack(side='left', pady=5)
         
-        # Movement parameters
-        self.escape_distance = 100  # Distance to flee from cursor
-        self.speed = 30  # How far to move each time
+        # OK Button
+        self.ok_button = tk.Button(self.outer_frame, text="OK", width=10, 
+                                  command=self.on_ok_click,
+                                  bg=self.W98_GREY, activebackground=self.W98_GREY,
+                                  font=('MS Sans Serif', 8),
+                                  relief='raised', bd=2)
+        self.ok_button.pack(side='bottom', pady=15)
         
-        # Start monitoring mouse position
+        self.escape_distance = 120
+        self.speed = 40
         self.check_mouse_position()
-        
+
     def check_mouse_position(self):
-        """Check mouse position and move window if too close"""
         try:
-            # Get current mouse position
-            mouse_x = self.root.winfo_pointerx()
-            mouse_y = self.root.winfo_pointery()
+            mx, my = self.root.winfo_pointerxy()
+            wx, wy = self.root.winfo_x(), self.root.winfo_y()
             
-            # Get window position
-            win_x = self.root.winfo_x()
-            win_y = self.root.winfo_y()
-            
-            # Calculate center of window
-            win_center_x = win_x + self.width // 2
-            win_center_y = win_y + self.height // 2
-            
-            # Calculate distance from mouse to window center
-            dx = win_center_x - mouse_x
-            dy = win_center_y - mouse_y
+            cx, cy = wx + self.width // 2, wy + self.height // 2
+            dx, dy = cx - mx, cy - my
             distance = (dx**2 + dy**2)**0.5
             
-            # If mouse is too close, move away
             if distance < self.escape_distance:
-                # Calculate direction to move (away from mouse)
-                if distance > 0:
-                    move_x = int((dx / distance) * self.speed)
-                    move_y = int((dy / distance) * self.speed)
-                else:
-                    # If mouse is exactly at center, move randomly
-                    move_x = random.choice([-self.speed, self.speed])
-                    move_y = random.choice([-self.speed, self.speed])
+                move_x = int((dx / distance) * self.speed) if distance > 0 else random.randint(-50, 50)
+                move_y = int((dy / distance) * self.speed) if distance > 0 else random.randint(-50, 50)
                 
-                # Calculate new position
-                new_x = win_x + move_x
-                new_y = win_y + move_y
+                nx = max(0, min(wx + move_x, self.root.winfo_screenwidth() - self.width))
+                ny = max(0, min(wy + move_y, self.root.winfo_screenheight() - self.height))
                 
-                # Bounce off screen edges
-                if new_x < 0:
-                    new_x = 0
-                if new_y < 0:
-                    new_y = 0
-                if new_x + self.width > self.screen_width:
-                    new_x = self.screen_width - self.width
-                if new_y + self.height > self.screen_height:
-                    new_y = self.screen_height - self.height
-                
-                # Move the window
-                self.root.geometry(f"{self.width}x{self.height}+{new_x}+{new_y}")
+                self.root.geometry(f"+{nx}+{ny}")
             
-            # Continue checking (every 10ms for smooth movement)
             self.root.after(10, self.check_mouse_position)
-        except tk.TclError:
-            # Window was destroyed
-            pass
-    
+        except: pass
+
     def on_ok_click(self):
-        """Handle OK button click"""
-        # Show a congratulatory message and close
         self.root.destroy()
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showinfo("Success!", "You caught me! Well done!")
-        root.destroy()
-    
+        messagebox.showinfo("Win98", "Error successfully ignored.")
+
     def run(self):
-        """Start the application"""
         self.root.mainloop()
 
 if __name__ == "__main__":
